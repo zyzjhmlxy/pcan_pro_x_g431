@@ -12,7 +12,7 @@
 
 #define CAN_WITHOUT_ISR 1
 
-#define CAN_TX_FIFO_SIZE (272)
+#define CAN_TX_FIFO_SIZE (300)
 static struct t_can_dev
 {
   void *dev;
@@ -141,7 +141,7 @@ static int _can_send( FDCAN_HandleTypeDef *p_can, struct t_can_msg *p_msg )
 		byte_count = utils_byte_count_to_dlc(byte_count);
 	}
 
-	tx_header.DataLength = DLC_TO_HAL(byte_count);
+	tx_header.DataLength = byte_count;
 
 	// Transmit CAN packet
 	if (!can_send_packet(&tx_header, (void*)p_msg->data))
@@ -300,98 +300,6 @@ void pcan_can_set_bus_active( int bus, uint16_t mode )
 	}
 }
 
-/* set predefined best values */
-void pcan_can_set_bitrate( int bus, uint32_t bitrate, int is_data_bitrate )
-{
-	eFeedback eRet = FBK_Success;
-	FDCAN_HandleTypeDef *p_can = can_dev_array[bus].dev;
-	can_nom_bitrate nom_bitrate = CAN_BITRATE_500K;
-	can_data_bitrate data_bitrate = CAN_DATA_BITRATE_2M;
-	
-	if( !p_can )
-		return;
-
-	//设置仲裁波特率
-	if(!is_data_bitrate)
-	{
-		switch(bitrate)
-		{
-			case 10000:
-				nom_bitrate = CAN_BITRATE_10K;
-				break;
-			case 20000:
-				nom_bitrate = CAN_BITRATE_20K;
-				break;
-			case 50000:
-				nom_bitrate = CAN_BITRATE_50K;
-				break;
-			case 100000:
-				nom_bitrate = CAN_BITRATE_100K;
-				break;
-			case 125000:
-				nom_bitrate = CAN_BITRATE_125K;
-				break;
-			case 250000:
-				nom_bitrate = CAN_BITRATE_250K;
-				break;
-			case 500000:
-				nom_bitrate = CAN_BITRATE_500K;
-				break;
-			case 1000000:
-				nom_bitrate = CAN_BITRATE_1000K;
-				break;
-			default:
-				nom_bitrate = CAN_BITRATE_500K;
-				break;
-		}
-
-		//仅设置到内部全局变量中,在can_open()生效
-		eRet = can_set_baudrate(nom_bitrate);
-		if(eRet != FBK_Success)
-		{
-			PRINT_FAULT("can_set_baudrate Error");
-			return;
-		}
-	}
-	else
-	{		
-		//设置CANFD的数据波特率
-		switch(bitrate)
-		{
-			case 500000:
-				data_bitrate = CAN_DATA_BITRATE_500K;
-				break;
-			case 1000000:
-				data_bitrate = CAN_DATA_BITRATE_1M;
-				break;
-			case 2000000:
-				data_bitrate = CAN_DATA_BITRATE_2M;
-				break;
-			case 4000000:
-				data_bitrate = CAN_DATA_BITRATE_4M;
-				break;
-			case 5000000:
-				data_bitrate = CAN_DATA_BITRATE_5M;
-				break;
-			case 8000000:
-				data_bitrate = CAN_DATA_BITRATE_8M;
-				break;
-			default:
-				data_bitrate = CAN_DATA_BITRATE_2M;
-				break;
-		}
-
-		//仅设置到内部全局变量中,在can_open()生效
-		eRet = can_set_data_baudrate(data_bitrate);
-		if(eRet != FBK_Success)
-		{
-			PRINT_FAULT("can_set_data_baudrate Error");
-			return;
-		}
-	}
-
-}
-
 //该接口需同时改变CANFD时钟频率pcan_can_set_canfdclock(pcan_device.can[channel].can_clock)
 void pcan_can_set_bitrate_ex( int bus, uint16_t brp, uint8_t tseg1, uint8_t tseg2, uint8_t sjw, int is_data_bitrate )
 {
@@ -447,7 +355,7 @@ void pcan_can_poll( void )
   if( (uint32_t)( err_last_check - ts_ms ) > 250 )
   {
     err_last_check = ts_ms;
-    for( int i = 0; i < CAN_BUS_TOTAL; i++ )
+    for( int i = CAN_BUS_1; i < CAN_BUS_TOTAL; i++ )
     {
       if( !can_dev_array[i].err_handler )
         continue;
@@ -496,7 +404,7 @@ int pcan_can_isr_frame(FDCAN_RxHeaderTypeDef *phdr, uint8_t* pData)
 	}
 	
 	//经典CAN的数据长度
-	msg.size = HAL_TO_DLC(phdr->DataLength);
+	msg.size = phdr->DataLength;
 	
 	if(phdr->FDFormat == FDCAN_FD_CAN)
 	{

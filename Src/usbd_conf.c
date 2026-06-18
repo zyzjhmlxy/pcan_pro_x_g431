@@ -119,9 +119,9 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   hpcd_usb.Instance = USB;
   hpcd_usb.Init.dev_endpoints = 4;
   hpcd_usb.Init.speed = PCD_SPEED_FULL;
-  hpcd_usb.Init.ep0_mps = DEP0CTL_MPS_64;
+  hpcd_usb.Init.ep0_mps = PCD_EP0MPS_64;
   hpcd_usb.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_usb.Init.Sof_enable = ENABLE;
+  hpcd_usb.Init.Sof_enable = DISABLE;
   hpcd_usb.Init.low_power_enable = DISABLE;
   hpcd_usb.Init.lpm_enable = DISABLE;
   hpcd_usb.Init.battery_charging_enable = DISABLE;
@@ -131,15 +131,20 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
     Error_Handler( );
   }
 
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x00 , PCD_SNG_BUF, 0x18);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x80 , PCD_SNG_BUF, 0x58);
-	
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x81 , PCD_SNG_BUF, 0x98);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x82 , PCD_SNG_BUF, 0xd8);
-	
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x01 , PCD_SNG_BUF, 0x118);
-  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x02 , PCD_SNG_BUF, 0x158);
-	
+  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x00 , PCD_SNG_BUF, 0x20);
+  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x80 , PCD_SNG_BUF, 0x60);
+
+  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x81 , PCD_SNG_BUF, 0xA0);
+  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x01 , PCD_SNG_BUF, 0xE0);
+
+  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x82 , PCD_SNG_BUF, 0x120);
+  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x02 , PCD_SNG_BUF, 0x160);
+
+#if ( PCAN_PRO ) || ( PCAN_PRO_FD )  || ( PCAN_X6)
+  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x83 , PCD_SNG_BUF, 0x1A0);
+  HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x03 , PCD_SNG_BUF, 0x1E0);
+#endif
+
   return USBD_OK;
 }
 

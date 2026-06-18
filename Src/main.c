@@ -59,7 +59,7 @@ void pcan_clock_config( void )
 	/** Initializes the RCC Oscillators according to the specified parameters
 	* in the RCC_OscInitTypeDef structure.
 	*/
-#ifdef CANABLE2 //使用内部16MHz晶振,如标准版的CANable2.0等
+#if defined(CANABLE2) //使用内部16MHz晶振,如标准版的CANable2.0等
 	RCC_OscInitStruct.OscillatorType	  = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI48;
 	RCC_OscInitStruct.HSIState			  = RCC_HSI_ON;
 	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -71,13 +71,13 @@ void pcan_clock_config( void )
 	RCC_OscInitStruct.PLL.PLLP			  = RCC_PLLP_DIV2;
 	RCC_OscInitStruct.PLL.PLLQ			  = RCC_PLLQ_DIV2;
 	RCC_OscInitStruct.PLL.PLLR			  = RCC_PLLR_DIV2;
-#else //使用外部晶振,譬如预留有8MHz晶振的非标版CANable2.0等
+#else //使用16MHz外部晶振的非标版CANable2.0
 	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_HSI48;
 	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
 	RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
+	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV2; //16MHz降频归一化成8MHz; 8MHz外部晶振可使用RCC_PLLM_DIV1,同时修改HSE_VALUE宏
 	RCC_OscInitStruct.PLL.PLLN = 20;
 	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
 	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
@@ -136,9 +136,9 @@ uint32_t system_get_can_clock(void)
 }
 
 //动态调整CAN FD频率(PcanView.exe上允许设置的频率为80MHz 60MHz 40MHz 30MHz 24MHz 20MHz)
-//调整方案是：系统时钟频率跟CAN FD时钟频率保持一致;
-//也可以保持MCU系统时钟为高频率,没有测试过哪种方案比较优;
-//选择这种方案只是觉得频率保持一致比较简单,缺点是设置CAN频率低，CPU运行代码的频率也跟着低,即CPU效率低不能发挥它应有的性能
+//调整方案是：系统时钟频率跟CAN FD时钟频率保持一致,brp/tseg1/tseg2/sjw  直接使用PcanView.exe下发的参数;
+//也可以保持MCU系统时钟/CAN FD时钟频率不变(如总是160MHz),同时将PcanView.exe下发brp/tseg1/tseg2/sjw  参数转换为适合160MHz的新参数进行配置。
+//没有测试过以上哪种方案比较优，选择这种方案只是觉得频率保持一致比较简单,缺点是设置CAN频率低，CPU运行代码的频率也跟着低,即CPU效率低不能发挥它应有的性能
 //另外分频系数组合太多了,未考虑哪种约束条件下更优,这里只考虑只要能分频到想要的频率就行了
 int pcan_can_set_canfdclock(uint32_t can_clock)
 {
@@ -152,53 +152,49 @@ int pcan_can_set_canfdclock(uint32_t can_clock)
 	//跟当前频率一致时无需大动干戈
 	if( can_clock == system_get_can_clock() )
 	{
-		return 0;
+		return HAL_OK;
 	}
 
 	PRINT_DEBUG("Set CANFD Clk %lu", can_clock);
 	
 #ifdef CANABLE2
+	PLLM = 2; //二分频
+	
 	//计算分频系数 SYSCLK = ( ( 16MHz / PLLM ) * PLLN ) / PLLR
 	switch( can_clock )
 	{
 		case 80000000u:
 		{
-			PLLM = 2;
 			PLLN = 20;
 			PLLR = 2;
 			break;
 		}
 		case 60000000u:
 		{
-			PLLM = 2;
 			PLLN = 15;
 			PLLR = 2;
 			break;
 		}
 		case 40000000u:
 		{
-			PLLM = 2;
 			PLLN = 20;
 			PLLR = 4;
 			break;
 		}	
 		case 30000000u:
 		{
-			PLLM = 2;
 			PLLN = 15;
 			PLLR = 4;
 			break;
 		}	
 		case 24000000u:
 		{
-			PLLM = 2;
 			PLLN = 12;
 			PLLR = 4;
 			break;
 		}	
 		case 20000000u:
 		{
-			PLLM = 2;
 			PLLN = 15;
 			PLLR = 6;
 			break;
@@ -206,7 +202,7 @@ int pcan_can_set_canfdclock(uint32_t can_clock)
 		default:
 		{
 			PRINT_FAULT("Not Support!!");
-			return -1;
+			return HAL_ERROR;
 		}
 	}
 	
@@ -239,47 +235,43 @@ int pcan_can_set_canfdclock(uint32_t can_clock)
                              PLLQ,
                              PLLR );
 #else
-	//计算分频系数 SYSCLK = ( ( 8MHz / PLLM ) * PLLN ) / PLLR
+	PLLM = 2; //二分频, 外部晶振使用8MHz时改为1
+	
+	//计算分频系数 SYSCLK = ( ( 16MHz / PLLM ) * PLLN ) / PLLR
 	switch( can_clock )
 	{
 		case 80000000u:
 		{
-			PLLM = 1;
 			PLLN = 20;
 			PLLR = 2;
 			break;
 		}
 		case 60000000u:
 		{
-			PLLM = 1;
 			PLLN = 15;
 			PLLR = 2;
 			break;
 		}
 		case 40000000u:
 		{
-			PLLM = 1;
 			PLLN = 20;
 			PLLR = 4;
 			break;
 		}	
 		case 30000000u:
 		{
-			PLLM = 1;
 			PLLN = 15;
 			PLLR = 4;
 			break;
 		}	
 		case 24000000u:
 		{
-			PLLM = 1;
 			PLLN = 12;
 			PLLR = 4;
 			break;
 		}	
 		case 20000000u:
 		{
-			PLLM = 1;
 			PLLN = 15;
 			PLLR = 6;
 			break;
@@ -287,7 +279,7 @@ int pcan_can_set_canfdclock(uint32_t can_clock)
 		default:
 		{
 			PRINT_FAULT("Not Support!!");
-			return -1;
+			return HAL_ERROR;
 		}
 	}
 	
@@ -356,7 +348,7 @@ int pcan_can_set_canfdclock(uint32_t can_clock)
 
 	PRINT_DEBUG("SystemCoreClock = %lu, canfd_clock = %lu", SystemCoreClock, canfd_clock);
 	
-	return 0;
+	return HAL_OK;
 }
 
 // ARM's

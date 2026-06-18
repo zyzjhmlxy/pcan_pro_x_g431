@@ -31,7 +31,9 @@ struct t_class_data
   uint8_t ep_tx_in_use[15];
   uint8_t cmd_ep_buffer[PCAN_CMD_PACKET_SIZE];
   uint8_t data1_ep_buffer[PCAN_DATA_PACKET_SIZE];
+#if ( PCAN_PRO ) || ( PCAN_PRO_FD ) || ( PCAN_X6) 
   uint8_t data2_ep_buffer[PCAN_DATA_PACKET_SIZE];
+#endif
 };
 
 extern USBD_ClassTypeDef usbd_pcanpro;

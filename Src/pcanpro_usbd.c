@@ -243,10 +243,11 @@ static uint8_t device_init( USBD_HandleTypeDef *pdev, uint8_t cfgidx )
     
   pdev->pClassData = (void*)&pcanpro_data;
 
-
   USBD_LL_PrepareReceive( pdev, PCAN_USB_EP_CMDOUT, pcanpro_data.cmd_ep_buffer, sizeof( pcanpro_data.cmd_ep_buffer ) );
   USBD_LL_PrepareReceive( pdev, PCAN_USB_EP_MSGOUT_CH1, pcanpro_data.data1_ep_buffer, sizeof( pcanpro_data.data1_ep_buffer ) );
+#if ( PCAN_PRO ) || ( PCAN_PRO_FD ) || ( PCAN_X6) 
   USBD_LL_PrepareReceive( pdev, PCAN_USB_EP_MSGOUT_CH2, pcanpro_data.data2_ep_buffer, sizeof( pcanpro_data.data2_ep_buffer ) );
+#endif
 
   return USBD_OK;
 }
@@ -349,11 +350,13 @@ static uint8_t device_data_out( USBD_HandleTypeDef *pdev, uint8_t epnum )
     pcan_protocol_process_data( epnum, pcanpro_data.data1_ep_buffer, size );
     USBD_LL_PrepareReceive( pdev, epnum, pcanpro_data.data1_ep_buffer, sizeof( pcanpro_data.data1_ep_buffer ) );
   }
+#if ( PCAN_PRO ) || ( PCAN_PRO_FD ) || ( PCAN_X6) 
   else if( epnum == PCAN_USB_EP_MSGOUT_CH2 )
   {
     pcan_protocol_process_data( epnum, pcanpro_data.data2_ep_buffer, size );
     USBD_LL_PrepareReceive( pdev, epnum, pcanpro_data.data2_ep_buffer, sizeof( pcanpro_data.data2_ep_buffer ) );
   }
+#endif
   else
   {
     return USBD_FAIL;

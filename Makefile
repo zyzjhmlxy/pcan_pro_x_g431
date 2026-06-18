@@ -15,7 +15,6 @@
 ######################################
 FW_VER = $(shell date +'%Y%m%d' )
 TARGET = $(BOARD)_$(FW_VER)
-TARGET_CRYSTAL ?= 8000000
 #######################################
 # paths
 #######################################
@@ -47,27 +46,36 @@ Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c \
-Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c \
-Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c \
-Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c \
-Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c \
 Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c \
-Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c \
 Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c \
 Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c \
 Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c 
+
+# C includes
+C_INCLUDES =  \
+-ISrc \
+-ISrc/canfd \
+-ISrc/uart \
+-IDrivers/STM32G4xx_HAL_Driver/Inc \
+-IDrivers/STM32G4xx_HAL_Driver/Inc/Legacy \
+-IDrivers/CMSIS/Device/ \
+-IDrivers/CMSIS/Include \
+-IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc \
+-IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
 
 # ASM sources
 ASM_SOURCES =  \
 startup_stm32g431xx.s
 
+# AS includes
+AS_INCLUDES = 
 
 #######################################
 # binaries
@@ -113,38 +121,18 @@ C_DEFS =  \
 -DUSE_HAL_DRIVER \
 -DSTM32G431xx
 
-
-# AS includes
-AS_INCLUDES = 
-
-# C includes
-C_INCLUDES =  \
--ISrc \
--ISrc/canfd \
--ISrc/uart \
--IDrivers/STM32G4xx_HAL_Driver/Inc \
--IDrivers/STM32G4xx_HAL_Driver/Inc/Legacy \
--IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc \
--IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc \
--IDrivers/CMSIS/Device/ \
--IDrivers/CMSIS/Include
-
-
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -pedantic -fdata-sections -ffunction-sections
 
-CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -std=c11 -Wall -pedantic -fdata-sections -ffunction-sections $(BOARD_FLAGS)\
--DHSE_VALUE=$(TARGET_CRYSTAL)
+CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -std=c11 -Wall -pedantic -fdata-sections -ffunction-sections $(BOARD_FLAGS) 
 
 # for debug
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2 -u _printf_float
 endif
 
-
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
-
 
 #######################################
 # LDFLAGS
@@ -161,7 +149,7 @@ LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BU
 all: pcanfd canable2
 
 pcanfd:
-	$(MAKE) BOARD=pcanfd DEBUG=0 OPT=-Os BOARD_FLAGS='-DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0' elf hex bin
+	$(MAKE) BOARD=pcanfd DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=16000000 -DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0' elf hex bin
 	
 canable2:
 	$(MAKE) BOARD=pcanfd_canable2 DEBUG=0 OPT=-Os BOARD_FLAGS='-DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0 -DCANABLE2' elf hex bin

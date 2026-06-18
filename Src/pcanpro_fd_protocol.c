@@ -14,7 +14,11 @@
 #include "utils.h"
 #include "debug.h"
 
+#if ( PCAN_PRO ) || ( PCAN_PRO_FD ) || ( PCAN_X6) 
 #define CAN_CHANNEL_MAX     (2)
+#else
+#define CAN_CHANNEL_MAX     (1)
+#endif
 
 struct pcan_usbfd_fw_info
 {
@@ -77,15 +81,17 @@ pcan_device =
     .channel_nr = 0xFFFFFFFF,
     .can_clock = 80000000u
   },
+#if ( PCAN_PRO ) || ( PCAN_PRO_FD ) || ( PCAN_X6)   
   .can[1] = 
   {
     .channel_nr = 0xFFFFFFFF,
     .can_clock = 80000000u
   },
+#endif  
 };
 
 #define PCAN_USB_DATA_BUFFER_SIZE   2048
-static uint8_t resp_buffer[2][PCAN_USB_DATA_BUFFER_SIZE];
+static uint8_t resp_buffer[PCAN_USB_DATA_BUFFER_SIZE];
 static uint8_t drv_load_packet[16];
 
 static uint16_t data_pos = 0;
@@ -107,18 +113,12 @@ void *pcan_data_alloc_buffer( uint16_t type, uint16_t size )
   return pmsg;
 }
 
-static struct t_m2h_fsm resp_fsm[2] = 
+static struct t_m2h_fsm resp_fsm[ ] = 
 {
   [0] = {
     .state = 0,
-    .ep_addr = PCAN_USB_EP_CMDIN,
-    .pdbuf = resp_buffer[0],
-    .dbsize = PCAN_USB_DATA_BUFFER_SIZE,
-  },
-  [1] = {
-    .state = 0,
     .ep_addr = PCAN_USB_EP_MSGIN_CH1,
-    .pdbuf = resp_buffer[1],
+    .pdbuf = resp_buffer,
     .dbsize = PCAN_USB_DATA_BUFFER_SIZE,
   }
 };
@@ -164,7 +164,9 @@ uint8_t pcan_protocol_device_setup( USBD_HandleTypeDef *pdev, USBD_SetupReqTyped
           /* windows/linux has different struct size */
           fwi.size_of = req->wLength;
           fwi.dev_id[0] = pcan_device.can[0].channel_nr;
+#if ( PCAN_PRO ) || ( PCAN_PRO_FD ) || ( PCAN_X6) 		  
           fwi.dev_id[1] = pcan_device.can[1].channel_nr;
+#endif		  
           fwi.ser_no = pcan_device.device_nr;
           return USBD_CtlSendData( pdev,  (void*)&fwi, fwi.size_of );
         }
@@ -375,7 +377,6 @@ int pcan_protocol_set_baudrate( uint8_t channel, struct t_can_bitrate *pbitrate,
 	  										bitrate, sample, \
 	  										pcur->brp, pcur->tseg1, \
 	  										pcur->tseg2, pcur->sjw);
-  //pcan_can_set_bitrate( channel, bitrate, ( pcur == pdata_bitrate ) );
   pcan_can_set_bitrate_ex( channel, pcur->brp, pcur->tseg1, pcur->tseg2, pcur->sjw, ( pcur == pdata_bitrate ) );
   
   if( pcur == pdata_bitrate )
@@ -641,16 +642,7 @@ void pcan_protocol_process_data( uint8_t ep, uint8_t *ptr, uint16_t size )
 	    	);
 		PRINT_TRACE_BUFFER(p_tx_msg->d, p_tx_msg->size);
 #endif
-		//bug??
-		if( (size == 64) && ((pmsg->size == 68) || (pmsg->size == 84)) )
-		{
-			pmsg->size = (pmsg->size - 20);
-			size = pmsg->size;
-		}
-		else
-		{
-			break;
-		}
+		break;
     }
     
     size -= pmsg->size;
@@ -706,7 +698,7 @@ void pcan_protocol_poll( void )
     /* align to 64 */
     flush_size += (64-1);
     flush_size &= ~(64-1);
-    int res = pcan_flush_data( &resp_fsm[1], data_buffer, flush_size );
+    int res = pcan_flush_data( &resp_fsm[0], data_buffer, flush_size );
     if( res )
     { 
       data_pos = 0;
@@ -719,7 +711,7 @@ void pcan_protocol_poll( void )
     ts_us -= pcan_device.last_time_flush;
     if( pcan_device.last_time_flush && ( ts_us > 800 ) )
     {
-      int res = pcan_flush_data( &resp_fsm[1], 0, 0 );
+      int res = pcan_flush_data( &resp_fsm[0], 0, 0 );
       if( res )
       {
         pcan_device.last_time_flush = 0;
