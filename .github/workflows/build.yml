@@ -22,11 +22,11 @@ jobs:
         run: |
           make
 
-      - name: Upload Binary Artifact
+      - name: Find and Upload Binary Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: pcan_pro_x_g431-firmware
           path: |
-            *.bin
-            *.elf
-            *.hex
+            **/*.bin
+            **/*.elf
+            **/*.hex
