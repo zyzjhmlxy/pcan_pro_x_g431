@@ -3,7 +3,7 @@
 #include "usbd_conf.h"
 
 
-#define USBD_VID                        0x0483	// 注：尊重知识产权
+#define USBD_VID                        0x0C72
 #define USBD_LANGID_STRING              1033
 #define USBD_MANUFACTURER_STRING        "PEAK-System Technik GmbH"
 #if  PCAN_PRO_FD
