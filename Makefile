@@ -146,10 +146,13 @@ LIBDIR =
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
-all: pcanfd canable2
+all: pcanfd pcanprofd canable2
 
 pcanfd:
 	$(MAKE) BOARD=pcanfd DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=16000000 -DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0' elf hex bin
+
+pcanprofd:
+    $(MAKE) BOARD=pcanprofd DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=16000000 -DPCAN_PRO_FD=1 -DINCLUDE_LIN_INTERFACE=1' elf hex bin
 	
 canable2:
 	$(MAKE) BOARD=pcanfd_canable2 DEBUG=0 OPT=-Os BOARD_FLAGS='-DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0 -DCANABLE2' elf hex bin
