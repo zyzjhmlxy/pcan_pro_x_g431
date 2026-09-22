@@ -146,7 +146,7 @@ LIBDIR =
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
-all: pcanfd pcanprofd canable2
+all: pcanpro pcanfd pcanprofd canable2
 
 pcanpro:
 	$(MAKE) BOARD=pcanpro DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=16000000 -DPCAN_PRO=1 -DINCLUDE_LIN_INTERFACE=0' elf hex bin
