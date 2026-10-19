@@ -47,6 +47,8 @@
 #define UCAN_CMD_RX_BARRIER    0x010
 #define UCAN_CMD_SET_ERR_GEN_S    0x011
 
+#define UCAN_CMD_UNKNOWN_1      0x28
+
 #define UCAN_CMD_END_OF_COLLECTION  0x3ff
 
 /* uCAN received messages list */

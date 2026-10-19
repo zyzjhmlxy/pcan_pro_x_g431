@@ -146,20 +146,31 @@ LIBDIR =
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
-all: pcanpro pcanfd pcanprofd canable2
-
-pcanpro:
-	$(MAKE) BOARD=pcanpro DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=16000000 -DPCAN_PRO=1 -DINCLUDE_LIN_INTERFACE=0' elf hex bin
+all: pcanfd pcanfd_canable2 pcanfd_print pcanfd_canable2_print
 
 pcanfd:
-	$(MAKE) BOARD=pcanfd DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=16000000 -DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0' elf hex bin
+	$(MAKE) BOARD=pcanfd DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=8000000 -DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0 -DNDEBUG' elf hex bin
+
+pcanpro:
+	$(MAKE) BOARD=pcanpro DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=8000000 -DPCAN_PRO=1 -DINCLUDE_LIN_INTERFACE=1' elf hex bin
 
 pcanprofd:
-	$(MAKE) BOARD=pcanprofd DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=16000000 -DPCAN_PRO_FD=1 -DINCLUDE_LIN_INTERFACE=0' elf hex bin
+	$(MAKE) BOARD=pcanprofd DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=8000000 -DPCAN_PRO_FD=1 -DINCLUDE_LIN_INTERFACE=1 -DNDEBUG' elf hex bin
 	
-canable2:
+pcanfd_canable2:
 	$(MAKE) BOARD=pcanfd_canable2 DEBUG=0 OPT=-Os BOARD_FLAGS='-DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0 -DCANABLE2' elf hex bin
+	
+pcanpro_canable2:
+	$(MAKE) BOARD=pcanpro_canable2 DEBUG=0 OPT=-Os BOARD_FLAGS='-DPCAN_PRO=1 -DINCLUDE_LIN_INTERFACE=1 -DCANABLE2' elf hex bin
 
+pcanprofd_canable2:
+	$(MAKE) BOARD=pcanprofd_canable2 DEBUG=0 OPT=-Os BOARD_FLAGS='-DPCAN_PRO_FD=1 -DINCLUDE_LIN_INTERFACE=1 -DCANABLE2' elf hex bin
+
+pcanfd_print:
+	$(MAKE) BOARD=pcanfd_print DEBUG=0 OPT=-Os BOARD_FLAGS='-DHSE_VALUE=8000000 -DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0 -DNDEBUG -D_PRINT_LEVEL=2' elf hex bin
+	
+pcanfd_canable2_print:
+	$(MAKE) BOARD=pcanfd_canable2_print DEBUG=0 OPT=-Os BOARD_FLAGS='-DPCAN_FD=1 -DINCLUDE_LIN_INTERFACE=0 -DCANABLE2 -DNDEBUG -D_PRINT_LEVEL=2' elf hex bin
 
 #######################################
 # build the application

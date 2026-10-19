@@ -77,7 +77,11 @@ void pcan_clock_config( void )
 	RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	#if HSE_VALUE == 8000000
+	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1; //16MHz降频归一化成8MHz; 8MHz外部晶振可使用RCC_PLLM_DIV1,同时修改HSE_VALUE宏
+	#else
 	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV2; //16MHz降频归一化成8MHz; 8MHz外部晶振可使用RCC_PLLM_DIV1,同时修改HSE_VALUE宏
+	#endif
 	RCC_OscInitStruct.PLL.PLLN = 20;
 	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
 	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;

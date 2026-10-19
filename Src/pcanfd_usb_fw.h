@@ -136,6 +136,18 @@ struct ucan_usb_dbg_msg {
     uint8_t d[64];
 }__attribute__((packed));
 
+#define UCAN_USB_CMD_DEVDATA_SET	0xa0
+#define UCAN_USB_CMD_DEVDATA_REQ	0xd0
+#define UCAN_USB_CMD_DEVDATA_RSP	0xd1
+
+struct ucan_usb_devdata {
+	uint16_t	opcode_channel;
+	uint16_t	total_len;
+	uint16_t	offset;
+	uint16_t	id;
+	uint8_t	    d[64];
+};
+
 /* these are PCAN-Chip specific cmds to control I/O pins */
 #define UCAN_USB_CMD_DPIN_CFG_SET  0x8d
 #define UCAN_USB_CMD_DPIN_CFG_REQ  0xca

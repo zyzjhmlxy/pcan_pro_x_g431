@@ -13,7 +13,11 @@ extern uint32_t HAL_GetTick(void);
 #define PRINT_LEVEL_TRACE   2       // 堆栈跟踪, 频繁打印时添加
 
 //设置调试打印等级， 值为PRINT_LEVEL_NONE时关闭调试打印
-#define PRINT_LEVEL  PRINT_LEVEL_NONE /*PRINT_LEVEL_NONE/PRINT_LEVEL_FAULT/PRINT_LEVEL_DEBUG/PRINT_LEVEL_TRACE*/
+#ifdef _PRINT_LEVEL
+#define PRINT_LEVEL _PRINT_LEVEL /*PRINT_LEVEL_NONE/PRINT_LEVEL_FAULT/PRINT_LEVEL_DEBUG/PRINT_LEVEL_TRACE*/
+#else
+#define PRINT_LEVEL PRINT_LEVEL_NONE
+#endif
 
 #define SHELL_COLOR_DEFAULT         "\033[0m"    //打印完关闭所有颜色属性
 #define SHELL_COLOR_ERROR           "\033[33m"   //黄色

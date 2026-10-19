@@ -126,6 +126,7 @@ static struct t_m2h_fsm resp_fsm[ ] =
 /* low level requests */
 uint8_t pcan_protocol_device_setup( USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req )
 {
+  PRINT_DEBUG("pcan_protocol_device_setup = %d",req->wValue);
   switch( req->bRequest )
   {
     case USB_VENDOR_REQUEST_INFO:
@@ -169,6 +170,68 @@ uint8_t pcan_protocol_device_setup( USBD_HandleTypeDef *pdev, USBD_SetupReqTyped
 #endif		  
           fwi.ser_no = pcan_device.device_nr;
           return USBD_CtlSendData( pdev,  (void*)&fwi, fwi.size_of );
+        }
+        case USB_VENDOR_REQUEST_wVALUE_INFO_BOOTLOADER:
+        {
+          static struct pcan_usbpro_bootloader_info bi = 
+          {
+            .ctrl_type = BOOTLOADER_INFO_STRUCT_TYPE,
+            .version[0] = 0,
+            .version[1] = 0,
+            .version[2] = 0,
+            .version[3] = 0,
+            .day = 1,
+            .month = 1,
+            .year = 26,
+            .dummy = 0,
+            .serial_num_high = 200030,
+            .serial_num_low = 1,
+            .hw_type = 0,
+            .hw_rev = 0,
+          };
+
+          return USBD_CtlSendData( pdev, (void*)&bi, sizeof( struct pcan_usbpro_bootloader_info ) );
+        }
+        case USB_VENDOR_REQUEST_wVALUE_INFO_uC_CHIPID:
+        {
+          static struct pcan_usbpro_uc_chipid uc_chid_info = {
+                  .ctrl_type = uC_CHIPID_STRUCT_TYPE,
+                  .chip_id = 0,
+          };
+          return USBD_CtlSendData( pdev, (void*)&uc_chid_info, sizeof( struct pcan_usbpro_uc_chipid ) );
+        }
+        case USB_VENDOR_REQUEST_wVALUE_INFO_USB_CHIPID:
+        {
+          static struct pcan_usbpro_usb_chipid usb_chid_info = {
+                  .ctrl_type = USB_CHIPID_STRUCT_TYPE,
+                  .chip_id = 0,
+          };
+          return USBD_CtlSendData( pdev, (void*)&usb_chid_info, sizeof( struct pcan_usbpro_usb_chipid ) );
+        }
+        case USB_VENDOR_REQUEST_wVALUE_INFO_DEVICENR:
+        {
+          static struct pcan_usbpro_device_nr dev_nr_info = {
+              .ctrl_type = DEVICE_NR_STRUCT_TYPE,
+              .device_nr = 0xFFFFFFFF,
+          };
+          return USBD_CtlSendData( pdev, (void*)&dev_nr_info, sizeof( struct pcan_usbpro_device_nr ) );
+        }
+        case USB_VENDOR_REQUEST_wVALUE_INFO_CPLD:{
+          static struct pcan_usbpro_cpld_info cpld_info = {
+              .ctrl_type = CPLD_INFO_STRUCT_TYPE,
+              .cpld_nr = 0,
+          };
+          return USBD_CtlSendData( pdev, (void*)&cpld_info, sizeof( struct pcan_usbpro_cpld_info ) );
+        }
+        case USB_VENDOR_REQUEST_wVALUE_INFO_MODE:
+        {
+          static struct pcan_usbpro_info_mode info_mode_data = {.ctrl_type = 0};
+          return USBD_CtlSendData( pdev, (void*)&info_mode_data, sizeof( struct pcan_usbpro_info_mode ) );
+        }
+        case USB_VENDOR_REQUEST_wVALUE_INFO_TIMEMODE:
+        {
+          static struct pcan_usbpro_time_mode time_mode_info = {.ctrl_type = 0};
+          return USBD_CtlSendData( pdev, (void*)&time_mode_info, sizeof( struct pcan_usbpro_time_mode ) );
         }
         default:
           assert(0);
@@ -575,7 +638,7 @@ static void pcan_protocol_process_cmd( uint8_t *ptr, uint16_t size )
         }
         break;
       case UCAN_USB_CMD_LED_SET:
-	  	PRINT_DEBUG("UCAN_USB_CMD_LED_SET");
+	  	  PRINT_DEBUG("UCAN_USB_CMD_LED_SET");
         if( UCAN_CMD_CHANNEL(pcmd) < CAN_CHANNEL_MAX )
         {
           struct ucan_usb_led *pled = (void*)pcmd;
@@ -596,13 +659,16 @@ static void pcan_protocol_process_cmd( uint8_t *ptr, uint16_t size )
       case 0x87: /* CAN FD ISO MODE, 0xff - enable, 0x55 - disable  */
       {
         /* do nothing here */
-	  	PRINT_DEBUG("Entry cmd 0x87");
+	  	  PRINT_DEBUG("Entry cmd 0x87");
         break;
       }
       case UCAN_CMD_END_OF_COLLECTION:
+	  	  PRINT_DEBUG("UCAN_CMD_END_OF_COLLECTION");
         return;
+
       default:
-        assert( 0 );
+        // assert( 0 );
+        PRINT_DEBUG("pcan_protocol_process_cmd: Unknown command opcode 0x%03X\r\n", UCAN_CMD_OPCODE(pcmd));
         break;
     }
 
